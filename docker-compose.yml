@@ -1,0 +1,36 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: weather-platform-postgres
+    environment:
+      POSTGRES_DB: weather_platform
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d weather_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: weather-platform-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/weather_platform
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+      DEMO_EMAIL: ${DEMO_EMAIL:-demo@weather.local}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-Demo@12345}
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:
